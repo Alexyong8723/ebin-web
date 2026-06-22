@@ -1,29 +1,78 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
+import * as tf from "@tensorflow/tfjs";
 import { Button } from "@/components/ui";
 import s from "./page.module.css";
 
-// Kiosk Configuration (in a real app, this might come from env or admin settings)
+// Kiosk Configuration
 const KIOSK_BIN_ID = "kiosk-bin-001";
 const KIOSK_BIN_NAME = "Main Lobby E-Bin";
+
+// Update this array if the model outputs classes in a different order (e.g. not alphabetical)
+const EWASTE_CLASSES = [
+  "battery",
+  "keyboard",
+  "microwave",
+  "mobile",
+  "mouse",
+  "pcb",
+  "player",
+  "printer",
+  "television",
+  "washing machine",
+];
+
+// Map classes to points (used for generating the QR code)
+const POINT_MAP = {
+  battery: 15,
+  keyboard: 10,
+  microwave: 40,
+  mobile: 25,
+  mouse: 8,
+  pcb: 20,
+  player: 15,
+  printer: 40,
+  television: 45,
+  "washing machine": 50,
+  other: 0,
+};
 
 export default function KioskPage() {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
 
-  const [status, setStatus] = useState("idle"); // idle, scanning, analyzing, success, error
+  const [status, setStatus] = useState("loading_model"); // loading_model, idle, scanning, analyzing, success, error
   const [errorMsg, setErrorMsg] = useState("");
   const [qrDataUrl, setQrDataUrl] = useState("");
   const [itemResult, setItemResult] = useState(null);
+  const [model, setModel] = useState(null);
 
   useEffect(() => {
-    startCamera();
-    return () => stopCamera();
+    loadModel();
+    return () => {
+      stopCamera();
+    };
   }, []);
 
+  async function loadModel() {
+    try {
+      setStatus("loading_model");
+      // Load the converted TensorFlow.js model from the public folder
+      const loadedModel = await tf.loadGraphModel('/model_web/model.json');
+      setModel(loadedModel);
+      setStatus("idle");
+      startCamera();
+    } catch (err) {
+      console.error("Failed to load model:", err);
+      setStatus("error");
+      setErrorMsg("Failed to load the AI model. Check the console.");
+    }
+  }
+
   async function startCamera() {
+    if (status === "error" && !model) return;
     setStatus("scanning");
     setErrorMsg("");
     setQrDataUrl("");
@@ -50,48 +99,62 @@ export default function KioskPage() {
     }
   }
 
-  // This is the framework function for classification.
-  // Currently, it calls the cloud API, but you can replace the logic inside
-  // to run your custom local model (e.g., TensorFlow.js) in the future.
-  async function runCustomModelClassification(base64Image) {
-    // TODO: Replace this API call with your custom model inference logic
-    const res = await fetch("/api/classify-waste", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ imageBase64: base64Image, mimeType: "image/jpeg" }),
-    });
+  async function runCustomModelClassification(canvas) {
+    if (!model) throw new Error("Model is not loaded yet.");
 
-    if (!res.ok) {
-      throw new Error("Classification failed");
-    }
+    // Create a tensor from the canvas image
+    const tensor = tf.browser.fromPixels(canvas);
+    
+    // Preprocess: Resize to 224x224, convert to float, normalize if necessary
+    // Note: EfficientNet usually requires 224x224 and normalization depending on how it was trained
+    const resized = tf.image.resizeBilinear(tensor, [224, 224]);
+    
+    // Normalize based on standard ImageNet/EfficientNet preprocessing if required by your model
+    // Assuming standard [0, 255] -> [0, 1] normalization here. Update if your model needs [-1, 1] or mean subtraction.
+    const normalized = resized.div(255.0);
+    const batched = normalized.expandDims(0); // Shape [1, 224, 224, 3]
 
-    return await res.json();
+    // Run prediction
+    const prediction = model.predict(batched);
+    
+    // Extract data
+    const scores = await prediction.data();
+    const maxScore = Math.max(...scores);
+    const maxIndex = scores.indexOf(maxScore);
+    
+    // Cleanup tensors to prevent memory leaks!
+    tf.dispose([tensor, resized, normalized, batched, prediction]);
+
+    const predictedClass = EWASTE_CLASSES[maxIndex] || "other";
+    
+    return {
+      category: predictedClass,
+      label: predictedClass.charAt(0).toUpperCase() + predictedClass.slice(1),
+      confidence: maxScore,
+      suggestedPoints: POINT_MAP[predictedClass] || 10,
+    };
   }
 
   async function handleScanItem() {
-    if (!videoRef.current || !canvasRef.current) return;
+    if (!videoRef.current || !canvasRef.current || !model) return;
 
     setStatus("analyzing");
     const video = videoRef.current;
     const canvas = canvasRef.current;
     
-    // Capture frame
+    // Capture frame exactly as it appears
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     const ctx = canvas.getContext("2d");
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     
-    // Get Base64 image
-    const base64DataUrl = canvas.toDataURL("image/jpeg", 0.8);
-    const base64Image = base64DataUrl.split(",")[1]; // Remove data:image/jpeg;base64, prefix
-
     try {
-      // 1. Classify the item using your model framework
-      const classification = await runCustomModelClassification(base64Image);
+      // 1. Classify the item using local TF.js Model
+      const classification = await runCustomModelClassification(canvas);
 
       if (classification.category === "other" || classification.confidence < 0.4) {
         setStatus("error");
-        setErrorMsg("Item not recognized as e-waste. Please try again.");
+        setErrorMsg(`Item not recognized as valid e-waste (detected: ${classification.category}). Please try again.`);
         return;
       }
 
@@ -109,9 +172,7 @@ export default function KioskPage() {
         }),
       });
 
-      if (!qrRes.ok) {
-        throw new Error("Failed to generate reward token.");
-      }
+      if (!qrRes.ok) throw new Error("Failed to generate reward token.");
 
       const { token } = await qrRes.json();
 
@@ -133,10 +194,6 @@ export default function KioskPage() {
     }
   }
 
-  function handleReset() {
-    startCamera();
-  }
-
   return (
     <div className={s.page}>
       <div className={s.kioskContainer}>
@@ -146,6 +203,13 @@ export default function KioskPage() {
         </div>
 
         <div className={s.content}>
+          {status === "loading_model" && (
+            <div className={s.loader}>
+              <div className={s.spinner} />
+              <span>Loading AI Model locally... (This may take a moment)</span>
+            </div>
+          )}
+
           {(status === "idle" || status === "scanning" || status === "analyzing") && (
             <>
               <div className={s.videoWrap}>
@@ -158,7 +222,7 @@ export default function KioskPage() {
                 {status === "analyzing" ? (
                   <div className={s.loader}>
                     <div className={s.spinner} />
-                    <span>Analyzing via Model...</span>
+                    <span>Analyzing...</span>
                   </div>
                 ) : (
                   <Button size="lg" onClick={handleScanItem}>
@@ -178,13 +242,13 @@ export default function KioskPage() {
               <h2 className={s.successText}>Item Accepted!</h2>
               <div className={s.itemDetails}>
                 <p className={s.itemLabel}>{itemResult.label}</p>
-                <p className={s.itemPoints}>+{itemResult.suggestedPoints} Points</p>
+                <p className={s.itemPoints}>+{itemResult.suggestedPoints} Points (Confidence: {(itemResult.confidence*100).toFixed(1)}%)</p>
               </div>
               <img src={qrDataUrl} alt="QR Code" className={s.qrImage} />
               <p className={s.instructionText}>
                 Scan this QR code using the <strong>eBin App</strong> on your phone to claim your points.
               </p>
-              <Button onClick={handleReset} variant="outline" style={{marginTop: 16}}>
+              <Button onClick={startCamera} variant="outline" style={{marginTop: 16}}>
                 Scan Next Item
               </Button>
             </div>
@@ -193,7 +257,7 @@ export default function KioskPage() {
           {status === "error" && (
             <div className={s.qrContainer}>
               <div className={s.error}>{errorMsg}</div>
-              <Button onClick={handleReset} style={{marginTop: 16}}>Try Again</Button>
+              <Button onClick={startCamera} style={{marginTop: 16}}>Try Again</Button>
             </div>
           )}
         </div>
