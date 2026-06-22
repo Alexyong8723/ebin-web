@@ -1,0 +1,166 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: var(--g50);
+  padding: 20px;
+  font-family: var(--font-sans);
+}
+
+.kioskContainer {
+  background: white;
+  border-radius: 24px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  max-width: 800px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  background: var(--p500);
+  color: white;
+  padding: 24px 32px;
+  text-align: center;
+}
+
+.title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.sub {
+  margin: 8px 0 0;
+  font-size: 16px;
+  opacity: 0.9;
+}
+
+.content {
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.videoWrap {
+  width: 100%;
+  max-width: 600px;
+  aspect-ratio: 4/3;
+  background: #000;
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+}
+
+.video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.scanOverlay {
+  position: absolute;
+  inset: 0;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-radius: 16px;
+  pointer-events: none;
+}
+
+.hiddenCanvas {
+  display: none;
+}
+
+.controls {
+  display: flex;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.qrContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.qrImage {
+  background: white;
+  padding: 16px;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  width: 250px;
+  height: 250px;
+}
+
+.successText {
+  color: var(--s600);
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.instructionText {
+  color: var(--g600);
+  font-size: 18px;
+  margin: 0;
+}
+
+.itemDetails {
+  background: var(--g100);
+  padding: 16px 24px;
+  border-radius: 12px;
+  width: 100%;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.itemLabel {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--g900);
+  margin: 0 0 8px;
+}
+
+.itemPoints {
+  font-size: 18px;
+  color: var(--p600);
+  font-weight: 500;
+  margin: 0;
+}
+
+.error {
+  color: var(--e600);
+  background: var(--e50);
+  padding: 16px;
+  border-radius: 8px;
+  width: 100%;
+  text-align: center;
+}
+
+.loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  color: var(--g600);
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--g200);
+  border-top-color: var(--p500);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

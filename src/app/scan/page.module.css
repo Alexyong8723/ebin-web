@@ -1,0 +1,42 @@
+.page { padding: 2rem; max-width: 520px; margin: 0 auto; }
+.header { margin-bottom: 1.5rem; }
+.title { font-size: 1.4rem; font-weight: 700; color: var(--g900); margin: 0 0 .25rem; }
+.sub { font-size: .85rem; color: var(--g500); margin: 0; }
+
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 2rem; }
+
+/* IDLE */
+.idleState { display:flex; flex-direction:column; align-items:center; gap:1.2rem; padding:1rem 0; }
+.qrIcon { color: var(--g400); }
+.camErr { color: var(--red); font-size:.83rem; text-align:center; background:var(--red-bg,#fef2f2); border:1px solid #fecaca; border-radius:8px; padding:.6rem .9rem; }
+.hint { font-size:.78rem; color:var(--g400); text-align:center; margin:0; }
+
+/* SCANNING */
+.scanState { display:flex; flex-direction:column; align-items:center; gap:1rem; }
+.videoWrap { position:relative; width:100%; max-width:360px; border-radius:12px; overflow:hidden; background:#000; aspect-ratio:1; }
+.video { width:100%; height:100%; object-fit:cover; display:block; }
+.scanOverlay { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
+.scanFrame {
+  width:200px; height:200px; border-radius:12px;
+  box-shadow: 0 0 0 2000px rgba(0,0,0,.45);
+  border: 2.5px solid white;
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{ border-color:white; } 50%{ border-color: var(--primary, #22c55e); } }
+.scanHint { font-size:.82rem; color:var(--g500); text-align:center; }
+.hiddenCanvas { display:none; }
+
+/* SUCCESS */
+.successState { display:flex; flex-direction:column; align-items:center; gap:.75rem; padding:1rem 0; text-align:center; }
+.successIcon { color:#22c55e; }
+.successTitle { font-size:1.6rem; font-weight:800; color: var(--g900); margin:0; }
+.successBin { font-size:.95rem; color:var(--g600); margin:0; font-weight:500; }
+.successLabel { font-size:.8rem; color:var(--g400); margin:0; }
+.successMsg { font-size:.83rem; color:var(--g500); margin:0; }
+.successBtns { display:flex; gap:.75rem; flex-wrap:wrap; justify-content:center; margin-top:.5rem; }
+
+/* ERROR */
+.errorState { display:flex; flex-direction:column; align-items:center; gap:.75rem; padding:1rem 0; text-align:center; }
+.errorIcon { color:var(--red,#ef4444); }
+.errorTitle { font-size:1.25rem; font-weight:700; color:var(--g900); margin:0; }
+.errorMsg { font-size:.85rem; color:var(--g500); margin:0; max-width:280px; }

@@ -1,0 +1,6 @@
+.page{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--n800);padding:1.5rem;}
+.card{background:var(--surface);border-radius:var(--r-xl);padding:2.25rem 2rem;width:100%;max-width:380px;display:flex;flex-direction:column;align-items:center;}
+.logo{width:56px;height:56px;background:var(--g600);border-radius:var(--r-lg);display:flex;align-items:center;justify-content:center;margin-bottom:1.1rem;}
+.title{font-size:20px;font-weight:600;margin-bottom:3px;}
+.sub{font-size:13px;color:var(--muted);margin-bottom:1.4rem;}
+.form{width:100%;display:flex;flex-direction:column;gap:13px;}

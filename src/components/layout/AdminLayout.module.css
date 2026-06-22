@@ -1,0 +1,94 @@
+/* ── Desktop sidebar ── */
+.shell{display:flex;min-height:100vh;}
+.sidebar{width:210px;flex-shrink:0;background:var(--n800);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;}
+.brand{display:flex;align-items:center;gap:10px;padding:18px 16px 14px;border-bottom:1px solid rgba(255,255,255,.08);}
+.logoBox{width:33px;height:33px;background:var(--g600);border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.brandName{font-size:15px;font-weight:600;color:#fff;line-height:1.2;}
+.brandSub{font-size:10.5px;color:rgba(255,255,255,.38);}
+.nav{flex:1;padding:8px;display:flex;flex-direction:column;gap:1px;}
+.link{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:var(--r-md);font-size:13px;color:rgba(255,255,255,.5);transition:background .13s,color .13s;}
+.link:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.85);}
+.active{background:rgba(255,255,255,.1)!important;color:#fff!important;font-weight:500;}
+.foot{padding:14px 12px;border-top:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:8px;}
+.adminTag{font-size:10.5px;color:var(--g400);font-weight:500;letter-spacing:.05em;text-transform:uppercase;}
+.signout{display:flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;color:rgba(255,255,255,.38);font-size:12.5px;padding:5px 6px;border-radius:var(--r-sm);transition:background .13s,color .13s;font-family:inherit;}
+.signout:hover{background:rgba(255,0,0,.15);color:#fca5a5;}
+.main{flex:1;min-width:0;padding:28px 30px;background:var(--bg);}
+
+/* Mobile-only elements hidden on desktop */
+.mobileHeader{display:none;}
+.bottomNav{display:none;}
+
+/* ── Mobile overrides ── */
+@media(max-width:768px){
+  .sidebar{display:none;}
+  .main{padding:14px 16px 90px;background:var(--bg);}
+
+  /* Mobile top header (dark, matching admin brand) */
+  .mobileHeader{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:#1c2120;
+    margin:-14px -16px 16px;
+    padding:14px 16px;
+    border-bottom:1px solid rgba(255,255,255,.08);
+  }
+  .mobileBrand{display:flex;align-items:center;gap:9px;}
+  .mobileLogoBox{
+    width:30px;height:30px;background:var(--g600);border-radius:8px;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .mobileBrandName{font-size:14px;font-weight:600;color:#fff;line-height:1.2;}
+  .mobileBrandSub{font-size:10px;color:rgba(255,255,255,.4);}
+  .mobileSignOut{
+    background:none;border:none;cursor:pointer;
+    color:rgba(255,255,255,.5);padding:6px;
+    border-radius:var(--r-sm);display:flex;
+    transition:background .13s,color .13s;
+  }
+  .mobileSignOut:hover{background:rgba(255,0,0,.2);color:#fca5a5;}
+
+  /* Bottom tab bar (dark theme matching admin) */
+  .bottomNav{
+    display:flex;
+    position:fixed;
+    bottom:0;left:0;right:0;
+    height:62px;
+    background:#1c2120;
+    border-top:1px solid rgba(255,255,255,.08);
+    z-index:100;
+    padding-bottom:env(safe-area-inset-bottom);
+    box-shadow:0 -2px 12px rgba(0,0,0,.3);
+  }
+  .bottomNavInner{
+    display:flex;
+    width:100%;
+    align-items:stretch;
+  }
+  .tabBtn{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:3px;
+    background:none;
+    border:none;
+    cursor:pointer;
+    color:rgba(255,255,255,.38);
+    font-size:9.5px;
+    font-weight:500;
+    text-decoration:none;
+    transition:color .13s;
+    padding:6px 2px;
+    font-family:inherit;
+  }
+  .tabBtn:hover{color:rgba(255,255,255,.7);}
+  .tabActive{color:var(--g400)!important;}
+  .tabActive svg{stroke:var(--g400);}
+}
+
+@media(min-width:769px){
+  .mobileHeader{display:none;}
+}

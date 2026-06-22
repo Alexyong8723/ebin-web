@@ -1,0 +1,28 @@
+.page{display:flex;flex-direction:column;gap:20px;}
+.hd{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;}
+.title{font-size:21px;font-weight:600;}.sub{font-size:13.5px;color:var(--muted);margin-top:2px;}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;}
+.catCard{padding:16px;display:flex;flex-direction:column;gap:8px;transition:box-shadow .15s;}
+.catCard:hover{box-shadow:var(--shadow-md);}
+.catTop{display:flex;align-items:center;justify-content:space-between;}
+.catEmoji{font-size:26px;}
+.catActions{display:flex;gap:4px;}
+.iconBtn{width:27px;height:27px;border-radius:var(--r-sm);border:1px solid var(--border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);transition:all .13s;}
+.iconBtn:hover{background:var(--n100);color:var(--text);}
+.iconDanger:hover{background:#fee2e2!important;color:#b91c1c!important;border-color:#fecaca!important;}
+.catName{font-size:15px;font-weight:600;color:var(--text);}
+.catDesc{font-size:12.5px;color:var(--muted);}
+.catPts{font-size:13px;color:var(--g600);}
+.catPts span{font-size:18px;font-weight:700;}
+
+.modalForm{display:flex;flex-direction:column;gap:14px;}
+.fld{display:flex;flex-direction:column;gap:5px;}
+.lbl{font-size:11.5px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
+.inp{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--n50);color:var(--text);font-size:13.5px;outline:none;}
+.inp:focus{border-color:var(--g500);box-shadow:0 0 0 3px var(--g100);}
+.iconGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;}
+.iconOpt{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface);cursor:pointer;transition:all .13s;font-size:20px;}
+.iconOpt:hover{background:var(--g50);border-color:var(--g200);}
+.iconOptSel{background:var(--g50)!important;border-color:var(--g600)!important;}
+.iconLbl{font-size:10px;color:var(--muted);text-transform:capitalize;font-family:inherit;}
+.modalBtns{display:flex;gap:9px;justify-content:flex-end;margin-top:4px;}
