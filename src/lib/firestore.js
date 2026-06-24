@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, getDocs, query, where, orderBy, limit, updateDoc, addDoc, deleteDoc, serverTimestamp, increment } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, query, where, orderBy, limit, updateDoc, addDoc, deleteDoc, serverTimestamp, increment, collectionGroup } from "firebase/firestore";
 import { db } from "./firebase";
 
 export const getUserProfile   = async (uid) => { const s = await getDoc(doc(db,"users",uid)); return s.exists()?{id:s.id,...s.data()}:null; };
@@ -11,6 +11,13 @@ export const getAllUsers       = async () => { const s = await getDocs(collectio
 export const getUserSubmissions = async (uid, count=10) => {
   const q = query(collection(db,"users",uid,"submissions"), orderBy("submittedAt","desc"), limit(count));
   const s = await getDocs(q); return s.docs.map(d=>({id:d.id,...d.data()}));
+};
+
+export const getAllSubmissions = async () => {
+  // Use collectionGroup to fetch all documents in any collection named "submissions"
+  const q = query(collectionGroup(db, "submissions"));
+  const s = await getDocs(q);
+  return s.docs.map(d=>({id:d.id,...d.data()}));
 };
 
 export const getUserRewards = async (uid) => {
