@@ -12,29 +12,38 @@ const KIOSK_BIN_NAME = "Main Lobby E-Bin";
 // Update this array if the model outputs classes in a different order (e.g. not alphabetical)
 const EWASTE_CLASSES = [
   "battery",
+  "flashlight",
   "keyboard",
-  "microwave",
-  "mobile",
+  "laptop",
   "mouse",
   "pcb",
-  "player",
-  "printer",
-  "television",
-  "washing machine",
+  "phone",
+  "usb_drive",
 ];
 
 // Map classes to points (used for generating the QR code)
 const POINT_MAP = {
-  battery: 15,
-  keyboard: 10,
-  microwave: 40,
-  mobile: 25,
-  mouse: 8,
+  battery: 5,
+  flashlight: 10,
+  keyboard: 15,
+  laptop: 50,
+  mouse: 10,
   pcb: 20,
-  player: 15,
-  printer: 40,
-  television: 45,
-  "washing machine": 50,
+  phone: 30,
+  usb_drive: 5,
+  other: 0,
+};
+
+// Map classes to estimated weight in kg
+const ESTIMATED_WEIGHT_MAP = {
+  battery: 0.1,
+  flashlight: 0.2,
+  keyboard: 0.5,
+  laptop: 2.0,
+  mouse: 0.1,
+  pcb: 0.2,
+  phone: 0.2,
+  usb_drive: 0.05,
   other: 0,
 };
 
@@ -48,6 +57,7 @@ export default function KioskPage() {
   const [qrDataUrl, setQrDataUrl] = useState("");
   const [itemResult, setItemResult] = useState(null);
   const [model, setModel] = useState(null);
+  const [analyzeProgress, setAnalyzeProgress] = useState(0);
 
   useEffect(() => {
     loadModel();
@@ -63,7 +73,6 @@ export default function KioskPage() {
       const loadedModel = await tf.loadGraphModel('/model_web/model.json');
       setModel(loadedModel);
       setStatus("idle");
-      startCamera();
     } catch (err) {
       console.error("Failed to load model:", err);
       setStatus("error");
@@ -109,10 +118,10 @@ export default function KioskPage() {
     // Note: EfficientNet usually requires 224x224 and normalization depending on how it was trained
     const resized = tf.image.resizeBilinear(tensor, [224, 224]);
     
-    // Normalize based on standard ImageNet/EfficientNet preprocessing if required by your model
-    // Assuming standard [0, 255] -> [0, 1] normalization here. Update if your model needs [-1, 1] or mean subtraction.
-    const normalized = resized.div(255.0);
-    const batched = normalized.expandDims(0); // Shape [1, 224, 224, 3]
+    // The Keras model already contains a 'Rescaling' layer internally!
+    // If we divide by 255 here, the image gets double-normalized (turned almost black).
+    // We just need to pass the raw [0, 255] pixels directly to the model.
+    const batched = resized.expandDims(0); // Shape [1, 224, 224, 3]
 
     // Run prediction
     const prediction = model.predict(batched);
@@ -123,7 +132,7 @@ export default function KioskPage() {
     const maxIndex = scores.indexOf(maxScore);
     
     // Cleanup tensors to prevent memory leaks!
-    tf.dispose([tensor, resized, normalized, batched, prediction]);
+    tf.dispose([tensor, resized, batched, prediction]);
 
     const predictedClass = EWASTE_CLASSES[maxIndex] || "other";
     
@@ -132,6 +141,7 @@ export default function KioskPage() {
       label: predictedClass.charAt(0).toUpperCase() + predictedClass.slice(1),
       confidence: maxScore,
       suggestedPoints: POINT_MAP[predictedClass] || 10,
+      estimatedWeightKg: ESTIMATED_WEIGHT_MAP[predictedClass] || 0.1,
     };
   }
 
@@ -148,13 +158,23 @@ export default function KioskPage() {
     const ctx = canvas.getContext("2d");
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     
+    // Simulate loading progress
+    setAnalyzeProgress(0);
+    for (let i = 10; i <= 90; i += 20) {
+      setAnalyzeProgress(i);
+      await new Promise(r => setTimeout(r, 250));
+    }
+    
     try {
       // 1. Classify the item using local TF.js Model
       const classification = await runCustomModelClassification(canvas);
+      
+      setAnalyzeProgress(100);
+      await new Promise(r => setTimeout(r, 200));
 
       if (classification.category === "other" || classification.confidence < 0.4) {
         setStatus("error");
-        setErrorMsg(`Item not recognized as valid e-waste (detected: ${classification.category}). Please try again.`);
+        setErrorMsg(`Item not recognized as valid e-waste (detected: non e waste). Please try again.`);
         return;
       }
 
@@ -169,6 +189,7 @@ export default function KioskPage() {
           binName: KIOSK_BIN_NAME,
           points: classification.suggestedPoints,
           label: classification.label,
+          estimatedWeightKg: classification.estimatedWeightKg,
         }),
       });
 
@@ -210,7 +231,17 @@ export default function KioskPage() {
             </div>
           )}
 
-          {(status === "idle" || status === "scanning" || status === "analyzing") && (
+          {status === "idle" && (
+            <div style={{textAlign: "center", padding: "4rem 1rem"}}>
+              <h2 style={{marginBottom: "1rem", fontSize: "1.5rem", fontWeight: "bold"}}>System Ready</h2>
+              <p style={{marginBottom: "2rem", color: "#666"}}>Place your item ready, then enable the camera to begin scanning.</p>
+              <Button size="lg" onClick={startCamera}>
+                Enable Camera
+              </Button>
+            </div>
+          )}
+
+          {(status === "scanning" || status === "analyzing") && (
             <>
               <div className={s.videoWrap}>
                 <video ref={videoRef} className={s.video} playsInline muted />
@@ -220,9 +251,11 @@ export default function KioskPage() {
               
               <div className={s.controls}>
                 {status === "analyzing" ? (
-                  <div className={s.loader}>
-                    <div className={s.spinner} />
-                    <span>Analyzing...</span>
+                  <div style={{width: '100%', maxWidth: '300px', margin: '0 auto', textAlign: 'center'}}>
+                    <div style={{marginBottom: '0.75rem', fontWeight: '500'}}>Analyzing item... {analyzeProgress}%</div>
+                    <div style={{width: '100%', height: '10px', background: '#e0e0e0', borderRadius: '5px', overflow: 'hidden'}}>
+                      <div style={{width: `${analyzeProgress}%`, height: '100%', background: 'var(--primary)', transition: 'width 0.3s ease'}} />
+                    </div>
                   </div>
                 ) : (
                   <Button size="lg" onClick={handleScanItem}>
@@ -257,7 +290,14 @@ export default function KioskPage() {
           {status === "error" && (
             <div className={s.qrContainer}>
               <div className={s.error}>{errorMsg}</div>
-              <Button onClick={startCamera} style={{marginTop: 16}}>Try Again</Button>
+              <div style={{ display: "flex", gap: "1rem", justifyContent: "center", marginTop: "1rem" }}>
+                <Button variant="outline" onClick={() => { stopCamera(); setStatus("idle"); }}>
+                  Return Back
+                </Button>
+                <Button onClick={startCamera}>
+                  Try Again
+                </Button>
+              </div>
             </div>
           )}
         </div>

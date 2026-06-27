@@ -10,9 +10,9 @@ const EMPTY = { locationName:"", address:"", capacityKg:"", acceptedCategories:[
 const BIN_COLOR = { available:"green", half_full:"amber", almost_full:"red", full:"gray" };
 const STATUS_PCT = { available:0, half_full:0.5, almost_full:0.8, full:1 };
 
-function statusToWeight(status, capacityKg) {
-  const cap = parseFloat(capacityKg) || 0;
-  return Math.round(cap * (STATUS_PCT[status] ?? 0) * 10) / 10;
+function statusToPoints(status, capacityPoints) {
+  const cap = parseFloat(capacityPoints) || 1000;
+  return Math.round(cap * (STATUS_PCT[status] ?? 0));
 }
 
 export default function AdminBins() {
@@ -48,7 +48,7 @@ export default function AdminBins() {
   }, []);
 
   function openAdd()  { setForm({...EMPTY}); setModal("add"); setErr(""); }
-  function openEdit(b){ setForm({ locationName:b.locationName, address:b.address, capacityKg:b.capacityKg, acceptedCategories:b.acceptedCategories||[], status:b.status, lat:b.lat||"", lng:b.lng||"", _id:b.id, currentWeightKg:b.currentWeightKg??0 }); setModal("edit"); setErr(""); }
+  function openEdit(b){ setForm({ locationName:b.locationName, address:b.address, capacityKg:b.capacityKg, capacityPoints:b.capacityPoints||1000, acceptedCategories:b.acceptedCategories||[], status:b.status, lat:b.lat||"", lng:b.lng||"", _id:b.id, currentPoints:b.currentPoints??0 }); setModal("edit"); setErr(""); }
 
   async function openQr(bin) {
     setQrBin(bin); setQrErr(""); setActiveQr(null); setQrPoints("10"); setQrLabel("");
@@ -95,7 +95,7 @@ export default function AdminBins() {
   async function handleSave(e) {
     e.preventDefault(); setErr(""); setSaving(true);
     try {
-      const data = { locationName:form.locationName, address:form.address, capacityKg:parseFloat(form.capacityKg), acceptedCategories:form.acceptedCategories, status:form.status, lat:parseFloat(form.lat)||null, lng:parseFloat(form.lng)||null, currentWeightKg: statusToWeight(form.status, form.capacityKg) };
+      const data = { locationName:form.locationName, address:form.address, capacityKg:parseFloat(form.capacityKg), capacityPoints:parseFloat(form.capacityPoints||1000), acceptedCategories:form.acceptedCategories, status:form.status, lat:parseFloat(form.lat)||null, lng:parseFloat(form.lng)||null, currentPoints: statusToPoints(form.status, form.capacityPoints) };
       if (form._id) await updateEbin(form._id, data);
       else await addEbin(data);
       const updated = await getEbins(); setEbins(updated); setModal(null);
@@ -118,14 +118,15 @@ export default function AdminBins() {
     finally { setDeleting(null); }
   }
 
-  function autoAlert(bin, newWeight) {
-    const pct = bin.capacityKg > 0 ? newWeight / bin.capacityKg : 0;
+  function autoAlert(bin, newPoints) {
+    const maxPoints = bin.capacityPoints || 1000;
+    const pct = maxPoints > 0 ? newPoints / maxPoints : 0;
     const status = pct >= 1 ? "full" : pct >= 0.8 ? "almost_full" : null;
     if (status) {
       fetch("/api/notify-bins", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bins: [{ ...bin, currentWeightKg: newWeight, status }] }),
+        body: JSON.stringify({ bins: [{ ...bin, currentPoints: newPoints, status }] }),
       }).catch(() => {});
     }
   }
@@ -176,7 +177,9 @@ export default function AdminBins() {
 
         <div className={s.grid}>
           {filtered.map(bin=>{
-            const pct = bin.capacityKg>0?Math.round((bin.currentWeightKg/bin.capacityKg)*100):0;
+            const currentPoints = bin.currentPoints || 0;
+            const maxPoints = bin.capacityPoints || 1000;
+            const pct = Math.round((currentPoints / maxPoints) * 100);
             return (
               <Card key={bin.id} className={s.binCard}>
                 <div className={s.cardTop}>
@@ -198,17 +201,17 @@ export default function AdminBins() {
                 <div className={s.capSection}>
                   <div className={s.capRow}><span className={s.capLbl}>Capacity</span><span className={s.capVal}>{pct}%</span></div>
                   <div className={s.capBar}><div className={s.capFill} style={{width:`${pct}%`,background:pct>=80?"var(--red)":pct>=50?"var(--amber)":"var(--g400)"}}/></div>
-                  <p className={s.capSub}>{bin.currentWeightKg??0}kg / {bin.capacityKg}kg max</p>
+                  <p className={s.capSub}>{currentPoints}pts / {maxPoints}pts max</p>
                 </div>
                 <div className={s.adjRow}>
-                  <span className={s.adjLbl}>Adjust weight (±5kg)</span>
+                  <span className={s.adjLbl}>Adjust points (±100pts)</span>
                   <div className={s.adjBtns}>
-                    <button className={s.adjBtn} onClick={async()=>{ await updateEbin(bin.id,{currentWeightKg:Math.max(0,(bin.currentWeightKg||0)-5)}); setEbins(p=>p.map(b=>b.id===bin.id?{...b,currentWeightKg:Math.max(0,(b.currentWeightKg||0)-5)}:b)); }}>−</button>
+                    <button className={s.adjBtn} onClick={async()=>{ await updateEbin(bin.id,{currentPoints:Math.max(0,(bin.currentPoints||0)-100)}); setEbins(p=>p.map(b=>b.id===bin.id?{...b,currentPoints:Math.max(0,(b.currentPoints||0)-100)}:b)); }}>−</button>
                     <button className={[s.adjBtn,s.adjBtnPlus].join(" ")} onClick={async()=>{
-                      const newW = Math.min(bin.capacityKg,(bin.currentWeightKg||0)+5);
-                      await updateEbin(bin.id,{currentWeightKg:newW});
-                      setEbins(p=>p.map(b=>b.id===bin.id?{...b,currentWeightKg:newW}:b));
-                      autoAlert(bin, newW);
+                      const newP = Math.min(maxPoints,(bin.currentPoints||0)+100);
+                      await updateEbin(bin.id,{currentPoints:newP});
+                      setEbins(p=>p.map(b=>b.id===bin.id?{...b,currentPoints:newP}:b));
+                      autoAlert(bin, newP);
                     }}>+</button>
                   </div>
                 </div>
@@ -230,18 +233,18 @@ export default function AdminBins() {
             <div className={s.fld}><label className={s.lbl}>Address</label><input className={s.inp} value={form.address} onChange={e=>setForm(p=>({...p,address:e.target.value}))} required placeholder="Full address"/></div>
             <div className={s.row}><div className={s.fld}><label className={s.lbl}>Latitude</label><input type="number" step="any" className={s.inp} value={form.lat} onChange={e=>setForm(p=>({...p,lat:e.target.value}))} placeholder="e.g. 3.1390" required/></div><div className={s.fld}><label className={s.lbl}>Longitude</label><input type="number" step="any" className={s.inp} value={form.lng} onChange={e=>setForm(p=>({...p,lng:e.target.value}))} placeholder="e.g. 101.6869" required/></div></div>
             <div className={s.row}>
-              <div className={s.fld}><label className={s.lbl}>Capacity (kg)</label><input type="number" min="1" className={s.inp} value={form.capacityKg} onChange={e=>setForm(p=>({...p,capacityKg:e.target.value}))} required placeholder="e.g. 60"/></div>
+              <div className={s.fld}><label className={s.lbl}>Capacity (Points)</label><input type="number" min="1" className={s.inp} value={form.capacityPoints || 1000} onChange={e=>setForm(p=>({...p,capacityPoints:e.target.value}))} required placeholder="e.g. 1000"/></div>
               <div className={s.fld}><label className={s.lbl}>Status</label>
                 <select className={s.inp} value={form.status} onChange={e=>{
                   const newStatus = e.target.value;
-                  const newWeight = statusToWeight(newStatus, form.capacityKg);
-                  setForm(p=>({...p, status:newStatus, currentWeightKg:newWeight}));
+                  const newPoints = statusToPoints(newStatus, form.capacityPoints);
+                  setForm(p=>({...p, status:newStatus, currentPoints:newPoints}));
                 }}>
                   <option value="available">Available</option><option value="half_full">Half Full</option><option value="almost_full">Almost Full</option><option value="full">Full</option>
                 </select>
-                {form.capacityKg && (
+                {form.capacityPoints && (
                   <p style={{fontSize:11,color:"var(--muted)",marginTop:4}}>
-                    Auto-set weight: <strong>{statusToWeight(form.status,form.capacityKg)} kg</strong> / {form.capacityKg} kg
+                    Auto-set points: <strong>{statusToPoints(form.status,form.capacityPoints)} pts</strong> / {form.capacityPoints || 1000} pts
                   </p>
                 )}
               </div>

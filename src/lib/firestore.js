@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, getDocs, query, where, orderBy, limit, updateDoc, addDoc, deleteDoc, serverTimestamp, increment, collectionGroup } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, query, where, orderBy, limit, updateDoc, addDoc, deleteDoc, serverTimestamp, increment, collectionGroup, writeBatch } from "firebase/firestore";
 import { db } from "./firebase";
 
 export const getUserProfile   = async (uid) => { const s = await getDoc(doc(db,"users",uid)); return s.exists()?{id:s.id,...s.data()}:null; };
@@ -7,6 +7,20 @@ export const getEbins         = async () => { const s = await getDocs(collection
 export const getRewardsCatalog= async () => { const s = await getDocs(query(collection(db,"rewards"),where("isActive","==",true))); return s.docs.map(d=>({id:d.id,...d.data()})); };
 export const getAllRewards     = async () => { const s = await getDocs(collection(db,"rewards")); return s.docs.map(d=>({id:d.id,...d.data()})); };
 export const getAllUsers       = async () => { const s = await getDocs(collection(db,"users")); return s.docs.map(d=>({id:d.id,...d.data()})); };
+
+export const getCarbonCredits = async () => {
+  const s = await getDocs(collection(db, "carbon_credits"));
+  return s.docs.map(d => ({ id: d.id, ...d.data() }));
+};
+
+export const seedCarbonCredits = async (items) => {
+  const batch = writeBatch(db);
+  const creditsRef = collection(db, "carbon_credits");
+  for (const item of items) {
+    batch.set(doc(creditsRef, item.id), item);
+  }
+  await batch.commit();
+};
 
 export const getUserSubmissions = async (uid, count=10) => {
   const q = query(collection(db,"users",uid,"submissions"), orderBy("submittedAt","desc"), limit(count));
@@ -52,13 +66,24 @@ export const deleteCategory= async (id) => deleteDoc(doc(db,"categories",id));
 // ── QR Point Tokens ────────────────────────────────────────────────────────────
 
 /** Admin: create a one-time QR token for a bin, worth `points` points */
-export async function createQrToken({ binId, binName, points, label }) {
+export async function createQrToken({ binId, binName, points, label, estimatedWeightKg }) {
   const token = "QR-" + Math.random().toString(36).substring(2,10).toUpperCase();
   const ref = await addDoc(collection(db,"qrTokens"), {
     token, binId, binName, points, label: label||"",
     used: false, usedBy: null, usedAt: null,
     createdAt: serverTimestamp(),
   });
+  
+  if (points && binId) {
+    try {
+      await updateDoc(doc(db, "ebins", binId), {
+        currentPoints: increment(points)
+      });
+    } catch (e) {
+      console.error("Failed to update bin points:", e);
+    }
+  }
+
   return { id: ref.id, token };
 }
 

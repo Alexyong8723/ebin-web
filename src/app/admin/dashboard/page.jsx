@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import AdminLayout from "@/components/layout/AdminLayout";
 import { getAllUsers, getEbins, getAllRewards, getAllSubmissions } from "@/lib/firestore";
 import { Badge, Card, Spinner, Button } from "@/components/ui";
@@ -20,6 +21,7 @@ export default function AdminDashboard() {
   const [busy, setBusy]     = useState(true);
   const [alertState, setAlertState] = useState("idle");
   const [alertMsg, setAlertMsg]     = useState("");
+  const router = useRouter();
 
   useEffect(() => {
     Promise.all([getAllUsers(), getEbins(), getAllRewards(), getAllSubmissions()])
@@ -213,9 +215,15 @@ export default function AdminDashboard() {
                 <thead><tr><th>Location</th><th>Capacity</th><th>Status</th></tr></thead>
                 <tbody>
                   {ebins.map(bin=>{
-                    const pct = bin.capacityKg>0?Math.round((bin.currentWeightKg/bin.capacityKg)*100):0;
+                    const currentPoints = bin.currentPoints || 0;
+                    const maxPoints = bin.capacityPoints || 1000;
+                    const pct = Math.round((currentPoints / maxPoints) * 100);
                     return (
-                      <tr key={bin.id}>
+                      <tr 
+                        key={bin.id} 
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => router.push(`/admin/ebin/${bin.id}`)}
+                      >
                         <td className={s.tdMain}>{bin.locationName}</td>
                         <td>
                           <div className={s.capWrap}>
