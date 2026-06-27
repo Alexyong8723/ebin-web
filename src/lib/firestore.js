@@ -113,5 +113,15 @@ export async function redeemQrToken(token, uid) {
   });
   await updateDoc(doc(db,"users",uid), { pointsTotal: increment(data.points) });
 
+  // Record this redemption in the user's activity log (submissions)
+  await addDoc(collection(db, "users", uid, "submissions"), {
+    binId: data.binId || "unknown",
+    binName: data.binName || "Unknown eBin",
+    pointsAwarded: data.points,
+    category: data.label || "E-Waste",
+    submittedAt: serverTimestamp(),
+    status: "approved"
+  });
+
   return { points: data.points, binName: data.binName, label: data.label };
 }
