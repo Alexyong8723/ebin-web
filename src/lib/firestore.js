@@ -117,8 +117,8 @@ export async function redeemQrToken(token, uid) {
   await addDoc(collection(db, "users", uid, "submissions"), {
     binId: data.binId || "unknown",
     binName: data.binName || "Unknown eBin",
-    pointsAwarded: data.points,
-    category: data.label || "E-Waste",
+    pointsEarned: data.points,
+    categoryId: data.label || "E-Waste",
     submittedAt: serverTimestamp(),
     status: "approved"
   });

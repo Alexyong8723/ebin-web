@@ -114,7 +114,9 @@ export default function Dashboard() {
               <Link href="/location" className={s.viewAll}>View map</Link>
             </div>
             {busy ? <Skels/> : ebins.slice(0,4).map(bin=>{
-              const pct = bin.capacityKg>0?Math.round((bin.currentWeightKg/bin.capacityKg)*100):0;
+              const currentPoints = bin.currentPoints || 0;
+              const maxPoints = bin.capacityPoints || 1000;
+              const pct = Math.round((currentPoints / maxPoints) * 100);
               return (
                 <div key={bin.id} className={s.binRow}>
                   <div className={s.binInf}>
