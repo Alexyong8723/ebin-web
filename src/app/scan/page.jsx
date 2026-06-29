@@ -10,6 +10,46 @@ import s from "./page.module.css";
 
 const STATE = { IDLE:"idle", SCANNING:"scanning", SUCCESS:"success", ERROR:"error" };
 
+const ITEM_DATA = {
+  "Headphones": { material: 45, carbon: 40, processing: 56, total: 45.7 },
+  "Power Bank": { material: 60, carbon: 85, processing: 76, total: 70.7 },
+  "Charging Cable": { material: 55, carbon: 40, processing: 44, total: 48.3 },
+  "SD Card": { material: 50, carbon: 30, processing: 52, total: 50.4 },
+  "Smart Tag": { material: 40, carbon: 50, processing: 58, total: 46.6 },
+  "POS System": { material: 70, carbon: 60, processing: 72, total: 67.4 },
+  "Card Reader": { material: 55, carbon: 50, processing: 64, total: 55.3 },
+  "Glucose Meter": { material: 65, carbon: 55, processing: 62, total: 61.4 },
+  "Digital Thermometer": { material: 40, carbon: 40, processing: 48, total: 49.6 },
+  "Blood Pressure Cuff": { material: 50, carbon: 65, processing: 64, total: 57.3 },
+  "Pulse Oximeter": { material: 40, carbon: 45, processing: 52, total: 43.9 },
+  "Contact Lens Cleaner": { material: 35, carbon: 40, processing: 44, total: 38.3 },
+  "Smart Inhaler": { material: 40, carbon: 50, processing: 56, total: 46.2 },
+  "Electric Fan": { material: 65, carbon: 50, processing: 56, total: 58.7 },
+  "Hair Dryer": { material: 55, carbon: 45, processing: 52, total: 51.4 },
+  "Calculator": { material: 40, carbon: 35, processing: 44, total: 39.3 },
+  "Smart Watch": { material: 75, carbon: 70, processing: 80, total: 74.5 },
+  "Electric Toothbrush": { material: 45, carbon: 60, processing: 68, total: 54.1 },
+  "Electric Razor": { material: 50, carbon: 60, processing: 62, total: 55.4 },
+  "Battery": { material: 40, carbon: 90, processing: 70, total: 61 }
+};
+
+function getBreakdown(label, totalPoints) {
+  const data = ITEM_DATA[label];
+  if (data) {
+    return {
+      material: (data.material * 0.5),
+      carbon: (data.carbon * 0.3),
+      processing: (data.processing * 0.2)
+    };
+  }
+  // Fallback if item not found
+  return {
+    material: (totalPoints * 0.5),
+    carbon: (totalPoints * 0.3),
+    processing: (totalPoints * 0.2)
+  };
+}
+
 export default function ScanPage() {
   const { user, setProfile } = useAuth();
   const router = useRouter();
@@ -143,15 +183,51 @@ export default function ScanPage() {
           {/* SUCCESS */}
           {status === STATE.SUCCESS && result && (
             <div className={s.successState}>
-              <div className={s.successIcon}>
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-                </svg>
+              <div className={s.receiptCard}>
+                <div className={s.receiptHeader}>
+                  <h2 className={s.receiptTitle}>Points: {Math.round(result.points)}</h2>
+                  <svg className={s.starIcon} width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                  </svg>
+                </div>
+                
+                {(() => {
+                  const bd = getBreakdown(result.label, result.points);
+                  return (
+                    <div className={s.breakdown}>
+                      <div className={s.receiptRow}>
+                        <span className={s.rowMaterial}>Material Value</span>
+                        <span className={s.receiptValue}>+{Math.round(bd.material)}</span>
+                      </div>
+                      <div className={s.receiptRow}>
+                        <span className={s.rowCarbon}>Carbon Credit</span>
+                        <span className={s.receiptValue}>+{Math.round(bd.carbon)}</span>
+                      </div>
+                      <div className={s.receiptRow}>
+                        <span className={s.rowProcessing}>Processing Cost</span>
+                        <span className={s.receiptValue}>+{Math.round(bd.processing)}</span>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                <div className={s.qrPlaceholder}>
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 3h8v8H3zM5 5v4h4V5zM13 3h8v8h-8zM15 5v4h4V5zM3 13h8v8H3zM5 15v4h4v-4zM18 13h3v3h-3zM13 18h3v3h-3zM16 16h2v2h-2zM13 13h2v2h-2zM19 19h2v2h-2zM19 16h2v2h-2zM16 19h2v2h-2z"/>
+                  </svg>
+                </div>
+
+                <div className={s.receiptFooter}>
+                  <svg className={s.recycleIcon} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M7 19H4.815a1.83 1.83 0 01-1.57-.881 1.785 1.785 0 01-.004-1.784L7.196 9.5"/><path d="M11 19h8.203a1.83 1.83 0 001.556-.89 1.784 1.784 0 000-1.777l-3.922-6.83"/><path d="M14 16l-3 3 3 3"/><path d="M4 8l3-3 3 3"/><path d="M12.5 3h-4"/><path d="M18.5 7h4"/>
+                  </svg>
+                  <span>Thank you for recycling!</span>
+                </div>
               </div>
-              <h2 className={s.successTitle}>+{result.points} Points Earned!</h2>
-              <p className={s.successBin}>{result.binName}</p>
+
               {result.label && <p className={s.successLabel}>{result.label}</p>}
-              <p className={s.successMsg}>Points have been added to your account.</p>
+              <p className={s.successMsg}>Points have been added to your account from {result.binName}.</p>
+              
               <div className={s.successBtns}>
                 <Button onClick={reset}>Scan Another</Button>
                 <Button variant="ghost" onClick={()=>router.push("/dashboard")}>Go to Dashboard</Button>
