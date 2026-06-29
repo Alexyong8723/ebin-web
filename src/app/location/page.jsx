@@ -72,9 +72,11 @@ export default function LocationPage() {
 
       ebins.forEach(bin => {
         if (!bin.lat || !bin.lng) return;
-        const st  = STATUS[bin.status] || STATUS.available;
-        const pct = bin.capacityKg > 0
-          ? Math.round((bin.currentWeightKg / bin.capacityKg) * 100) : 0;
+        const currentPoints = bin.currentPoints || 0;
+        const maxPoints = bin.capacityPoints || 1000;
+        const pct = Math.round((currentPoints / maxPoints) * 100);
+        const compStatusStr = pct >= 100 ? "full" : pct >= 80 ? "almost_full" : pct >= 50 ? "half_full" : "available";
+        const st  = STATUS[compStatusStr];
 
         const icon = L.divIcon({
           className: "",
@@ -97,7 +99,7 @@ export default function LocationPage() {
               <div style="height:7px;background:#e5e7eb;border-radius:4px;overflow:hidden;">
                 <div style="height:100%;width:${pct}%;background:${st.color};border-radius:4px;"></div>
               </div>
-              <div style="font-size:11px;color:#9ca3af;margin-top:5px;">${bin.currentWeightKg ?? 0}kg / ${bin.capacityKg}kg</div>
+              <div style="font-size:11px;color:#9ca3af;margin-top:5px;">${currentPoints}pts / ${maxPoints}pts</div>
             </div>
             <div style="display:flex;align-items:center;gap:6px;">
               <span style="width:9px;height:9px;border-radius:50%;background:${st.color};display:inline-block;"></span>
@@ -159,9 +161,11 @@ export default function LocationPage() {
               {busy && <div className={s.empty}>Loading bins…</div>}
               {!busy && filtered.length === 0 && <div className={s.empty}>No locations found.</div>}
               {filtered.map(bin => {
-                const st  = STATUS[bin.status] || STATUS.available;
-                const pct = bin.capacityKg > 0
-                  ? Math.round((bin.currentWeightKg / bin.capacityKg) * 100) : 0;
+                const currentPoints = bin.currentPoints || 0;
+                const maxPoints = bin.capacityPoints || 1000;
+                const pct = Math.round((currentPoints / maxPoints) * 100);
+                const compStatusStr = pct >= 100 ? "full" : pct >= 80 ? "almost_full" : pct >= 50 ? "half_full" : "available";
+                const st  = STATUS[compStatusStr];
                 return (
                   <button
                     key={bin.id}

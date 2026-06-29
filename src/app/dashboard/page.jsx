@@ -117,6 +117,7 @@ export default function Dashboard() {
               const currentPoints = bin.currentPoints || 0;
               const maxPoints = bin.capacityPoints || 1000;
               const pct = Math.round((currentPoints / maxPoints) * 100);
+              const compStatus = pct >= 100 ? "full" : pct >= 80 ? "almost_full" : pct >= 50 ? "half_full" : "available";
               return (
                 <div key={bin.id} className={s.binRow}>
                   <div className={s.binInf}>
@@ -124,7 +125,7 @@ export default function Dashboard() {
                     <p className={s.binAd}>{bin.address}</p>
                   </div>
                   <div className={s.binRt}>
-                    <Badge color={BIN_COLOR[bin.status]||"green"}>{bin.status?.replace("_"," ")}</Badge>
+                    <Badge color={BIN_COLOR[compStatus]||"green"}>{compStatus.replace("_"," ")}</Badge>
                     <div className={s.capBar}><div className={s.capFill} style={{width:`${pct}%`,background:pct>=80?"var(--red)":pct>=50?"var(--amber)":"var(--g400)"}}/></div>
                     <span className={s.capPct}>{pct}%</span>
                   </div>

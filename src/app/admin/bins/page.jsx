@@ -180,10 +180,11 @@ export default function AdminBins() {
             const currentPoints = bin.currentPoints || 0;
             const maxPoints = bin.capacityPoints || 1000;
             const pct = Math.round((currentPoints / maxPoints) * 100);
+            const compStatus = pct >= 100 ? "full" : pct >= 80 ? "almost_full" : pct >= 50 ? "half_full" : "available";
             return (
               <Card key={bin.id} className={s.binCard}>
                 <div className={s.cardTop}>
-                  <Badge color={BIN_COLOR[bin.status]||"green"}>{bin.status?.replace("_"," ")}</Badge>
+                  <Badge color={BIN_COLOR[compStatus]||"green"}>{compStatus.replace("_"," ")}</Badge>
                   <div className={s.cardActions}>
                     <button className={s.iconBtn} onClick={()=>openQr(bin)} title="Generate QR">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h.01M14 18h.01M18 14h.01M18 18h.01"/></svg>
