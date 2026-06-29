@@ -25,13 +25,22 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     Promise.all([getAllUsers(), getEbins(), getAllRewards(), getAllSubmissions()])
-      .then(([u,e,r,s])=>{ setUsers(u); setEbins(e); setRewds(r); setSubmissions(s); }).finally(()=>setBusy(false));
+      .then(([u,e,r,s])=>{
+        const mappedEbins = e.map(bin => {
+          const currentPoints = bin.currentPoints || 0;
+          const maxPoints = bin.capacityPoints || 1000;
+          const pct = Math.round((currentPoints / maxPoints) * 100);
+          const computedStatus = pct >= 100 ? "full" : pct >= 80 ? "almost_full" : pct >= 50 ? "half_full" : "available";
+          return { ...bin, computedPct: pct, computedStatus };
+        });
+        setUsers(u); setEbins(mappedEbins); setRewds(r); setSubmissions(s); 
+      }).finally(()=>setBusy(false));
   }, []);
 
   if (busy) return <AdminLayout><div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"60vh"}}><Spinner/></div></AdminLayout>;
 
   const totalPts      = users.reduce((a,u)=>a+(u.pointsTotal||0),0);
-  const attentionBins = ebins.filter(b=>b.status==="almost_full"||b.status==="full");
+  const attentionBins = ebins.filter(b=>b.computedStatus==="almost_full"||b.computedStatus==="full");
   const fullBins      = attentionBins.length;
 
   // Process Live Data for Trend Chart
@@ -56,7 +65,7 @@ export default function AdminDashboard() {
   
   // Data for Donut Chart
   const statusCounts = ebins.reduce((acc, bin) => {
-    acc[bin.status] = (acc[bin.status] || 0) + 1;
+    acc[bin.computedStatus] = (acc[bin.computedStatus] || 0) + 1;
     return acc;
   }, {});
   
@@ -215,9 +224,7 @@ export default function AdminDashboard() {
                 <thead><tr><th>Location</th><th>Capacity</th><th>Status</th></tr></thead>
                 <tbody>
                   {ebins.map(bin=>{
-                    const currentPoints = bin.currentPoints || 0;
-                    const maxPoints = bin.capacityPoints || 1000;
-                    const pct = Math.round((currentPoints / maxPoints) * 100);
+                    const pct = bin.computedPct;
                     return (
                       <tr 
                         key={bin.id} 
@@ -231,7 +238,7 @@ export default function AdminDashboard() {
                             <span className={s.capPct}>{pct}%</span>
                           </div>
                         </td>
-                        <td><Badge color={BIN_COLOR[bin.status]||"green"}>{bin.status?.replace("_"," ")}</Badge></td>
+                        <td><Badge color={BIN_COLOR[bin.computedStatus]||"green"}>{bin.computedStatus?.replace("_"," ")}</Badge></td>
                       </tr>
                     );
                   })}
