@@ -211,11 +211,7 @@ export default function ScanPage() {
                   );
                 })()}
 
-                <div className={s.qrPlaceholder}>
-                  <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M3 3h8v8H3zM5 5v4h4V5zM13 3h8v8h-8zM15 5v4h4V5zM3 13h8v8H3zM5 15v4h4v-4zM18 13h3v3h-3zM13 18h3v3h-3zM16 16h2v2h-2zM13 13h2v2h-2zM19 19h2v2h-2zM19 16h2v2h-2zM16 19h2v2h-2z"/>
-                  </svg>
-                </div>
+
 
                 <div className={s.receiptFooter}>
                   <svg className={s.recycleIcon} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
