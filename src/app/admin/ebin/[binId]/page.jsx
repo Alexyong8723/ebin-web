@@ -164,8 +164,17 @@ export default function AdminBinKiosk({ params: rawParams }) {
     setQrDataUrl("");
     setItemResult(null);
     try {
+      const ua = navigator.userAgent || "";
+      const isIPad = /iPad/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      const isMobile = /Mobi|Android|iPhone/i.test(ua);
+      
+      // iPad -> front ("user")
+      // Phone -> back ("environment")
+      // Laptop -> default ("user")
+      const mode = (isMobile && !isIPad) ? "environment" : "user";
+
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
+        video: { facingMode: mode, width: { ideal: 1280 }, height: { ideal: 720 } },
       });
       streamRef.current = stream;
       if (videoRef.current) {
