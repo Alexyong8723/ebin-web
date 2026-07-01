@@ -70,7 +70,7 @@ export default function ScanPage() {
     setCamErr(""); setMessage(""); setStatus(STATE.SCANNING);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal:"environment" }, width:{ ideal:1280 }, height:{ ideal:720 } }
+        video: { facingMode: { ideal:"user" }, width:{ ideal:1280 }, height:{ ideal:720 } }
       });
       streamRef.current = stream;
       const video = videoRef.current;
